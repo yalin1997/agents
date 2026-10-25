@@ -13,6 +13,13 @@ dependencies = [
 
 [project.scripts]
 pi-deepagent = "pi_deepagent.cli:main"
+pi-a2a = "pi_deepagent.a2a.cli:main"
+
+[project.optional-dependencies]
+a2a = [
+    "a2a-sdk[http-server,sqlite]==1.2.3",
+    "uvicorn>=0.35,<1",
+]
 
 [build-system]
 requires = ["hatchling"]

@@ -19,6 +19,9 @@ def create_pi_deepagent(
     shell_timeout: int = 120,
     extra_tools: Sequence[Any] | None = None,
     subagents: Sequence[dict[str, Any]] | None = None,
+    system_prompt: str | None = None,
+    response_format: Any = None,
+    include_pi_tools: bool = True,
 ):
     """Create a Deep Agents coding assistant modeled after Pi Coding Agent.
 
@@ -37,6 +40,9 @@ def create_pi_deepagent(
             tool when ``shell=True``.
         extra_tools: Additional LangChain-compatible tools/callables.
         subagents: Optional Deep Agents subagent specs.
+        system_prompt: Override the default Pi prompt for a specialized agent.
+        response_format: Optional Deep Agents structured output configuration.
+        include_pi_tools: Include workspace coding tools (disable for remote workers).
     """
     deepagents = import_module("deepagents")
     backends = import_module("deepagents.backends")
@@ -60,10 +66,14 @@ def create_pi_deepagent(
         else filesystem_backend(root_dir=str(root), virtual_mode=virtual_mode)
     )
 
+    options: dict[str, Any] = {}
+    if response_format is not None:
+        options["response_format"] = response_format
     return create_deep_agent(
         model=model,
-        tools=[*create_pi_tools(root), *(extra_tools or [])],
-        system_prompt=build_system_prompt(root),
+        tools=[*(create_pi_tools(root) if include_pi_tools else []), *(extra_tools or [])],
+        system_prompt=system_prompt if system_prompt is not None else build_system_prompt(root),
         backend=backend,
         subagents=subagents,
+        **options,
     )

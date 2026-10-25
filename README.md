@@ -57,6 +57,20 @@ pi-deepagent --shell "執行 pytest"
 M0 contract details and serialization shapes are documented in
 [`docs/core-contracts.md`](docs/core-contracts.md).
 
+## A2A 1.0 一層委派
+
+使用官方 `a2a-sdk` 的可選整合，包含真正 HTTP/SSE、多輪反問續接、artifacts、查詢、取消與 SQLite task persistence。
+
+```powershell
+uv sync --extra a2a
+# 終端一（沿用既有模型 API key／PI_DEEPAGENT_MODEL）
+uv run --extra a2a pi-a2a serve --workspace .
+# 終端二
+uv run --extra a2a pi-a2a chat --workspace .
+```
+
+詳見 [操作與架構說明](docs/a2a.md)。本機單使用者，server固定bind loopback；不開放網路部署。
+
 ## 測試
 
 ```bash
