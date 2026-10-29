@@ -15,7 +15,7 @@ class StubAgent:
 
     def invoke(self, state: dict[str, object]) -> dict[str, list[AIMessage]]:
         self.calls.append(state)
-        return {"messages": [AIMessage(content="stub answer")]}
+        return {"messages": [*state["messages"], AIMessage(content="stub answer")]}
 
 
 class CliTests(TestCase):
@@ -28,12 +28,15 @@ class CliTests(TestCase):
 
     def test_repl_keeps_history_and_exits_with_command(self) -> None:
         agent = StubAgent()
-        with patch("builtins.input", side_effect=["first", "/exit"]), patch("builtins.print"):
+        with patch("builtins.input", side_effect=["first", "second", "/exit"]), patch("builtins.print"):
             result = cli._run_repl(agent)
 
         self.assertEqual(result, 0)
-        self.assertEqual(len(agent.calls), 1)
+        self.assertEqual(len(agent.calls), 2)
         self.assertEqual(agent.calls[0]["messages"], ["first"])
+        self.assertEqual(agent.calls[1]["messages"][0], "first")
+        self.assertEqual(agent.calls[1]["messages"][1].content, "stub answer")
+        self.assertEqual(agent.calls[1]["messages"][2], "second")
 
     def test_once_mode_sends_prompt_to_created_agent(self) -> None:
         agent = StubAgent()

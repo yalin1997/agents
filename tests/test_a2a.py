@@ -5,7 +5,8 @@ from __future__ import annotations
 import asyncio
 import json
 import socket
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, redirect_stderr, redirect_stdout
+from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import IsolatedAsyncioTestCase, TestCase
@@ -21,11 +22,13 @@ except ImportError:
 import httpx
 import uvicorn
 from a2a.types import Message, Part, Role, Task, TaskState, TaskStatus
+from a2a.utils.errors import TaskNotFoundError
 from langchain_core.language_models.fake_chat_models import FakeMessagesListChatModel
 from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import ValidationError
 
 from pi_deepagent.a2a.client import RemoteClient, task_result
+from pi_deepagent.a2a import cli as a2a_cli
 from pi_deepagent.a2a.orchestrator import DelegatingSession
 from pi_deepagent.a2a.server import create_app
 from pi_deepagent.a2a.worker import DeepAgentWorker, WorkerOutcome, conversation_messages
@@ -89,6 +92,46 @@ async def running_server(worker, database, *, timeout=5):
 
 
 class OutcomeTests(TestCase):
+    def test_cli_main_returns_status_for_client_failures(self):
+        for failure, code, message in ((ImportError("missing SDK"), 1, "uv sync --extra a2a"),
+                                       (ValueError("bad session"), 1, "ValueError: bad session"),
+                                       (KeyboardInterrupt(), 130, "")):
+            with self.subTest(failure=type(failure).__name__):
+                with patch("pi_deepagent.a2a.cli.run_client", autospec=True, side_effect=failure) as run, \
+                        patch("pi_deepagent.a2a.cli.logging.basicConfig", autospec=True):
+                    with redirect_stderr(StringIO()) as stderr:
+                        self.assertEqual(a2a_cli.main(["tasks"]), code)
+                    run.assert_awaited_once()
+                    self.assertEqual(run.await_args.args[0].command, "tasks")
+                    self.assertIn(message, stderr.getvalue())
+
+    def test_cli_validates_timeout_and_port_before_starting_server(self):
+        for timeout in ("0", "-1"):
+            with self.subTest(timeout=timeout), redirect_stderr(StringIO()) as stderr, \
+                    patch("pi_deepagent.a2a.cli.logging.basicConfig", autospec=True):
+                with self.assertRaises(SystemExit) as error:
+                    a2a_cli.main(["send", "hello", "--timeout", timeout])
+                self.assertEqual(error.exception.code, 2)
+                self.assertIn("timeout must be positive", stderr.getvalue())
+        for port in (0, 65536):
+            with self.subTest(port=port), redirect_stderr(StringIO()) as stderr, \
+                    patch("pi_deepagent.a2a.cli.logging.basicConfig", autospec=True):
+                self.assertEqual(a2a_cli.main(["serve", "--port", str(port)]), 1)
+                self.assertIn("port must be between 1 and 65535", stderr.getvalue())
+
+    def test_cli_send_flags_and_required_task_id(self):
+        args = a2a_cli.parser().parse_args(["send", "hello", "--task-id", "task-1",
+                                          "--no-stream", "--return-immediately"])
+        self.assertEqual(args.text, "hello")
+        self.assertEqual(args.task_id, "task-1")
+        self.assertTrue(args.no_stream)
+        self.assertTrue(args.return_immediately)
+        for command in ("status", "cancel"):
+            with self.subTest(command=command), redirect_stderr(StringIO()):
+                with self.assertRaises(SystemExit) as error:
+                    a2a_cli.parser().parse_args([command])
+                self.assertEqual(error.exception.code, 2)
+
     def test_completion_requires_actual_result(self):
         with self.assertRaises(ValidationError):
             WorkerOutcome(outcome="completed", text="done")
@@ -110,7 +153,7 @@ class OutcomeTests(TestCase):
     def test_specialized_factory_options_preserve_core_defaults(self):
         from pi_deepagent.agent import create_pi_deepagent
         with TemporaryDirectory() as workspace:
-            with patch("deepagents.create_deep_agent", return_value="graph") as factory:
+            with patch("deepagents.create_deep_agent", autospec=True, return_value="graph") as factory:
                 create_pi_deepagent(workspace, model="fake:model", include_pi_tools=False,
                                     system_prompt="remote prompt", response_format=WorkerOutcome)
                 kwargs = factory.call_args.kwargs
@@ -127,6 +170,96 @@ class OutcomeTests(TestCase):
 
 
 class ProtocolTests(IsolatedAsyncioTestCase):
+    async def test_cli_chat_routes_status_cancel_and_reports_invalid_attach(self):
+        worker = ClarifyingWorker()
+        model = ToolModel(responses=[
+            AIMessage(content="", tool_calls=[{"name": "dispatch_remote_agent", "args": {
+                "request": "Write"}, "id": "dispatch"}]),
+            AIMessage(content="Waiting"),
+        ])
+        async with running_server(worker, self.database) as url:
+            path = Path(self.temporary.name) / "chat.json"
+            args = a2a_cli.parser().parse_args(["chat", "--url", url, "--workspace", self.temporary.name,
+                                               "--session-file", str(path)])
+            args.model = model
+            with patch("builtins.input", autospec=True,
+                       side_effect=["", "/status", "/attach missing", "Write", "/cancel", "/exit"]):
+                with redirect_stdout(StringIO()) as stdout, redirect_stderr(StringIO()) as stderr:
+                    await a2a_cli.run_client(args)
+            self.assertIn('"state": "idle"', stdout.getvalue())
+            self.assertIn("Please provide the audience", stdout.getvalue())
+            self.assertIn("TASK_STATE_CANCELED", stdout.getvalue())
+            self.assertIn("ValueError: attach is only for an uncertain send", stderr.getvalue())
+            self.assertEqual(len(worker.calls), 1)
+            data = json.loads(path.read_text(encoding="utf-8"))
+            self.assertFalse(data["uncertain"])
+            async with RemoteClient(url) as client:
+                self.assertEqual((await client.get(data["task_id"])).status.state, TaskState.TASK_STATE_CANCELED)
+
+    async def test_cli_card_send_status_tasks_and_cancel_over_http(self):
+        async def command(*arguments):
+            args = a2a_cli.parser().parse_args([*arguments, "--url", url])
+            with redirect_stdout(StringIO()) as stdout, redirect_stderr(StringIO()):
+                await a2a_cli.run_client(args)
+            return json.loads(stdout.getvalue())
+
+        async with running_server(ClarifyingWorker(), self.database) as url:
+            card = await command("card")
+            self.assertEqual(card["name"], "Pi Remote Assistant")
+            task = await command("send", "Write", "--no-stream")
+            self.assertEqual(task["state"], "TASK_STATE_INPUT_REQUIRED")
+            status = await command("status", task["task_id"])
+            self.assertEqual(status["id"], task["task_id"])
+            tasks = await command("tasks")
+            self.assertIn(task["task_id"], [item["id"] for item in tasks["tasks"]])
+            canceled = await command("cancel", task["task_id"])
+            self.assertEqual(canceled["task_id"], task["task_id"])
+            self.assertEqual(canceled["state"], "TASK_STATE_CANCELED")
+            completed = await command("send", "answer")
+            self.assertEqual(completed["state"], "TASK_STATE_COMPLETED")
+            self.assertEqual(completed["artifacts"][0]["text"], "A verified result")
+
+    async def test_restored_session_reconciles_uncertain_status_and_cancels(self):
+        async with running_server(ClarifyingWorker(), self.database) as url:
+            async with RemoteClient(url) as client:
+                task = await client.send("Write", message_id="accepted-before-timeout")
+                path = Path(self.temporary.name) / "reconcile.json"
+                factory = lambda *args, **kwargs: None
+                session = DelegatingSession(client, workspace=self.temporary.name, model="unused",
+                                            session_file=path, graph_factory=factory)
+                session.data.update(task_id=task.id, context_id=task.context_id,
+                                    message_id="accepted-before-timeout", uncertain=True)
+                session.save()
+                restored = DelegatingSession(client, workspace=self.temporary.name, model="unused",
+                                             session_file=path, graph_factory=factory)
+                status = await restored.status()
+                self.assertEqual(status["state"], "TASK_STATE_INPUT_REQUIRED")
+                self.assertFalse(restored.data["uncertain"])
+                self.assertFalse(json.loads(path.read_text(encoding="utf-8"))["uncertain"])
+                canceled = await restored.cancel()
+                self.assertEqual(canceled["task_id"], task.id)
+                self.assertEqual(canceled["state"], "TASK_STATE_CANCELED")
+
+    async def test_session_rejects_mismatched_identity_and_invalid_recovery(self):
+        client = RemoteClient("http://127.0.0.1:41241")
+        path = Path(self.temporary.name) / "identity.json"
+        factory = lambda *args, **kwargs: None
+        for version, url in ((2, client.url), (1, "http://other-server:1234")):
+            with self.subTest(version=version, url=url):
+                path.write_text(json.dumps({"version": version, "url": url, "messages": []}), encoding="utf-8")
+                with self.assertRaisesRegex(ValueError, "Session version/agent URL mismatch"):
+                    DelegatingSession(client, workspace=self.temporary.name, model="unused",
+                                      session_file=path, graph_factory=factory)
+        session = DelegatingSession(client, workspace=self.temporary.name, model="unused",
+                                    session_file=path.with_name("new.json"), graph_factory=factory)
+        self.assertEqual(await session.status(), {"state": "idle", "message_id": ""})
+        with self.assertRaisesRegex(ValueError, "No known task"):
+            await session.cancel()
+        with self.assertRaisesRegex(ValueError, "only for an uncertain send"):
+            await session.attach("unknown")
+        with self.assertRaisesRegex(ValueError, "must not be blank"):
+            await session.ask(" ")
+
     async def asyncSetUp(self):
         self.temporary = TemporaryDirectory()
         self.database = Path(self.temporary.name) / "tasks.sqlite"
@@ -221,7 +354,7 @@ class ProtocolTests(IsolatedAsyncioTestCase):
                 task = await client.send("Write")
                 with self.assertRaises(ValueError):
                     await client.send("answer", task_id=task.id, context_id="wrong")
-                with self.assertRaises(Exception):
+                with self.assertRaisesRegex(TaskNotFoundError, "Task not found"):
                     await client.get("missing")
 
     async def test_separate_tasks_have_isolated_histories(self):

@@ -202,8 +202,6 @@ def _bash(root: Path, command: str, timeout: int) -> str:
     output = _combine_output(completed.stdout, completed.stderr)
     if completed.returncode != 0:
         output += f"\n[exit_code] {completed.returncode}"
-    if len(output) > MAX_READ_CHARS:
-        output = output[:MAX_READ_CHARS] + "\n...[truncated]"
     return output
 
 

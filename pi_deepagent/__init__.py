@@ -6,7 +6,20 @@ from importlib import import_module
 from typing import Any
 
 from .capabilities import Capability, CapabilityProvider
-from .contracts import AgentEvent, AgentRun, EventId, ModelRef, RunId, RunResult, RunStatus, SessionId, ToolCall, ToolCallId
+from .contracts import (
+    AgentEvent,
+    AgentRequest,
+    AgentRun,
+    EventId,
+    ModelRef,
+    RunId,
+    RunRequest,
+    RunResult,
+    RunStatus,
+    SessionId,
+    ToolCall,
+    ToolCallId,
+)
 from .errors import (
     CommandError,
     ErrorCode,
@@ -18,7 +31,8 @@ from .errors import (
     ToolError,
     ValidationError,
 )
-from .runtime import AgentLoop, ApplicationService
+from .events import EventRecorder
+from .runtime import AgentLoop, AgentLoopRuntime, ApplicationService, RetryPolicy
 
 def create_pi_deepagent(*args: Any, **kwargs: Any) -> Any:
     """Create a Pi-inspired Deep Agent."""
@@ -27,21 +41,26 @@ def create_pi_deepagent(*args: Any, **kwargs: Any) -> Any:
 
 __all__ = [
     "AgentEvent",
+    "AgentRequest",
     "AgentLoop",
+    "AgentLoopRuntime",
     "AgentRun",
     "ApplicationService",
     "Capability",
     "CapabilityProvider",
     "CommandError",
     "ErrorCode",
+    "EventRecorder",
     "EventId",
     "ExtensionError",
     "ModelRef",
     "PiDeepAgentError",
     "ProviderError",
     "RunId",
+    "RunRequest",
     "RunResult",
     "RunStatus",
+    "RetryPolicy",
     "RuntimeFailure",
     "SessionError",
     "SessionId",

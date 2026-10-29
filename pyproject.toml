@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "A Pi Coding Agent-inspired coding assistant implemented with langchain-ai Deep Agents."
 requires-python = ">=3.11"
 dependencies = [
+    "python-dotenv>=1.0.0",
     "deepagents>=0.7.0",
     "langchain-core>=1.0.0",
     "langchain-openai>=1.0.0",

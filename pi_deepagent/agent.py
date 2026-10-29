@@ -4,10 +4,37 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from importlib import import_module
+from ipaddress import ip_address
+import os
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from langchain_core.language_models import BaseChatModel
+
+def _configure_local_model(model: str | BaseChatModel) -> str | BaseChatModel:
+    """Use Chat Completions for loopback OpenAI-compatible servers.
+
+    Deep Agents defaults openai: strings to Responses, whose reasoning-item
+    round trip is not supported by all local servers. Explicit model objects
+    and non-local providers retain their chosen protocol.
+    """
+    if not isinstance(model, str) or not model.startswith("openai:"):
+        return model
+    endpoint = os.environ.get("OPENAI_API_BASE") or os.environ.get("OPENAI_BASE_URL")
+    if not endpoint:
+        return model
+    try:
+        host = urlsplit(endpoint).hostname
+        local = host == "localhost" or (host is not None and ip_address(host).is_loopback)
+    except ValueError:
+        return model
+    if not local:
+        return model
+    from .local_model import make_local_model
+
+    return make_local_model(model.split(':', 1)[1], endpoint)
+
 
 def create_pi_deepagent(
     workspace: str | Path = ".",
@@ -69,8 +96,15 @@ def create_pi_deepagent(
     options: dict[str, Any] = {}
     if response_format is not None:
         options["response_format"] = response_format
+    configured_model = _configure_local_model(model)
+    if configured_model is not model:
+        from .local_model import native_context_middleware
+        options['middleware'] = native_context_middleware(configured_model, backend)
+    else:
+        from .tool_output import SafeFilesystemMiddleware
+        options['middleware'] = [SafeFilesystemMiddleware(backend=backend)]
     return create_deep_agent(
-        model=model,
+        model=configured_model,
         tools=[*(create_pi_tools(root) if include_pi_tools else []), *(extra_tools or [])],
         system_prompt=system_prompt if system_prompt is not None else build_system_prompt(root),
         backend=backend,

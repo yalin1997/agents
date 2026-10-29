@@ -1,7 +1,11 @@
 .venv/
+.uv-cache/
 __pycache__/
 *.py[cod]
 .pytest_cache/
 .mypy_cache/
 .pyright/
 .pi-a2a/
+.env
+.env.*
+!.env.example

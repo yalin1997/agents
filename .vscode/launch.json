@@ -1,0 +1,41 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "A2A: Server",
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "module": "pi_deepagent.a2a.cli",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "stopOnEntry": true,
+      "args": [
+        "serve",
+        "--workspace", "./a2a-playground",
+        "--port", "41241",
+        "--database", ".pi-a2a/debug-tasks.sqlite",
+        "--timeout", "3600"
+      ]
+    },
+    {
+      "name": "A2A: Chat",
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "module": "pi_deepagent.a2a.cli",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "stopOnEntry": true,
+      "args": [
+        "chat",
+        "--workspace", "./a2a-playground",
+        "--url", "http://127.0.0.1:41241",
+        "--session-file", ".pi-a2a/debug-client.json",
+        "--timeout", "3600"
+      ]
+    }
+  ]
+}

@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Sequence
 
 from .agent import create_pi_deepagent
+from .config import load_environment
 from .errors import PiDeepAgentError
 from .runtime import ApplicationService, ask_with_history, last_assistant_message, message_content
 
@@ -34,6 +35,7 @@ def _ask(agent: Any, prompt: str, history: list[Any]) -> tuple[list[Any], str]:
 
 
 def _build_parser() -> argparse.ArgumentParser:
+    load_environment()
     parser = argparse.ArgumentParser(description="Run a Pi-inspired LangChain Deep Agent.")
     parser.add_argument("prompt", nargs="*", help="Prompt to send to the agent")
     parser.add_argument(

@@ -10,8 +10,11 @@ import os
 import sys
 from pathlib import Path
 
+from ..config import load_environment
+
 
 def parser() -> argparse.ArgumentParser:
+    load_environment()
     root = argparse.ArgumentParser(description="Pi A2A 1.0 (official SDK, one-hop delegation)")
     sub = root.add_subparsers(dest="command", required=True)
     serve = sub.add_parser("serve", help="Run a real DeepAgent A2A server on loopback")

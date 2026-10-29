@@ -9,15 +9,28 @@ cd C:/Users/y4lin/gemini_repo/pi_deepagent
 pip install -e .
 ```
 
-依你要用的模型設定 API key，例如：
+在專案根目錄建立 `.env`（可複製 `.env.example`），填入 API key：
+
+```dotenv
+GOOGLE_API_KEY=你的_Gemini_API_key
+PI_DEEPAGENT_MODEL=google_genai:gemini-3.6-flash
+```
+
+從專案根目錄啟動 `pi-deepagent` 或 `pi-a2a`，會自動載入目前目錄的 `.env`。
+既有環境變數優先，`--model` 可覆寫模型設定；不會搜尋父目錄的 `.env`。
+`.env` 已排除於 Git，請勿提交真實 API key。
+
+也可以在 PowerShell 直接設定環境變數，例如：
 
 ```bash
-set GOOGLE_API_KEY=...
-set OPENAI_API_KEY=...
-set ANTHROPIC_API_KEY=...
+$env:GOOGLE_API_KEY = '...'
+$env:OPENAI_API_KEY = '...'
+$env:ANTHROPIC_API_KEY = '...'
 ```
 
 ## 使用
+
+RTX 4090 本地 Qwen 模型的啟動與串接方式見 [本地 LLM 說明](docs/local-llm.md)。
 
 ```bash
 pi-deepagent --workspace C:/Users/y4lin/gemini_repo --model google_genai:gemini-3.6-flash "列出目前專案"
@@ -70,6 +83,10 @@ uv run --extra a2a pi-a2a chat --workspace .
 ```
 
 詳見 [操作與架構說明](docs/a2a.md)。本機單使用者，server固定bind loopback；不開放網路部署。
+
+## Web 工作台
+
+正式本機 UI 提供單一 admin 登入、任務紀錄、Agent 執行進度、停止及重試。先執行 `python -m pi_deepagent.web init-admin` 初始化密碼，再執行 `python -m pi_deepagent.web --workspace .`，開啟 `http://127.0.0.1:8765/`。沿用既有 a2a extra 的 uvicorn；詳見 [使用方式與安全邊界](docs/web-workspace.md)。
 
 ## 測試
 

@@ -131,6 +131,58 @@ class ModelRef:
 
 
 @dataclass(frozen=True, slots=True)
+class AgentRequest:
+    """Input to one run, with optional per-request runtime overrides."""
+
+    prompt: str
+    session_id: SessionId | str | None = None
+    model: ModelRef | None = None
+    workspace: str | Path | None = None
+    parent_run_id: RunId | str | None = None
+    metadata: Mapping[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "prompt", _required_text(self.prompt, "prompt"))
+        if self.session_id is not None:
+            object.__setattr__(self, "session_id", _required_text(self.session_id, "session_id"))
+        if self.model is not None and not isinstance(self.model, ModelRef):
+            raise ValidationError("model must be a ModelRef", details={"field": "model"})
+        if self.workspace is not None:
+            if not isinstance(self.workspace, (str, Path)):
+                raise ValidationError("workspace must be a string or Path", details={"field": "workspace"})
+            object.__setattr__(self, "workspace", Path(_required_text(str(self.workspace), "workspace")).as_posix())
+        if self.parent_run_id is not None:
+            object.__setattr__(self, "parent_run_id", _required_text(self.parent_run_id, "parent_run_id"))
+        object.__setattr__(self, "metadata", _copy_mapping(self.metadata, "metadata"))
+
+    def to_dict(self) -> dict[str, JsonValue | None]:
+        return {
+            "prompt": self.prompt,
+            "session_id": self.session_id,
+            "model": self.model.to_dict() if self.model is not None else None,
+            "workspace": self.workspace,
+            "parent_run_id": self.parent_run_id,
+            "metadata": dict(self.metadata),
+        }
+
+    @classmethod
+    def from_dict(cls, value: Mapping[str, Any]) -> AgentRequest:
+        data = _as_mapping(value, "request")
+        raw_model = data.get("model")
+        return cls(
+            prompt=data.get("prompt"),
+            session_id=data.get("session_id"),
+            model=ModelRef.from_dict(_as_mapping(raw_model, "model")) if raw_model is not None else None,
+            workspace=data.get("workspace"),
+            parent_run_id=data.get("parent_run_id"),
+            metadata=data.get("metadata") if data.get("metadata") is not None else {},
+        )
+
+
+RunRequest = AgentRequest
+
+
+@dataclass(frozen=True, slots=True)
 class ToolCall:
     """A framework-neutral request to invoke a named tool."""
 
@@ -317,12 +369,14 @@ class RunResult:
 
 __all__ = [
     "AgentEvent",
+    "AgentRequest",
     "AgentRun",
     "EventId",
     "JsonValue",
     "ModelRef",
     "RunId",
     "RunResult",
+    "RunRequest",
     "RunStatus",
     "SessionId",
     "ToolCall",

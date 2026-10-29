@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pi Workspace</title>
+<style>
+:root{--bg:#f7f9fc;--surface:#fff;--text:#1c2b33;--muted:#566779;--primary:#0866d9;--soft:#eaf2ff;--border:#e1e7ef;--attention:#92400e;--danger:#b42318}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 'Microsoft JhengHei','微軟正黑體',sans-serif}button,textarea,select{font:inherit}button,select{cursor:pointer}button{min-height:44px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);padding:8px 14px;transition:background 160ms}button:hover{background:var(--soft)}button:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--primary);outline-offset:3px}button:disabled{opacity:.5;cursor:default}.primary{background:var(--primary);color:white;border-color:var(--primary)}.primary:hover{background:#0759bf}.app{display:grid;grid-template-columns:240px minmax(0,1fr) 320px;min-height:100vh}.sidebar{padding:26px 16px;background:#f0f4fa;border-right:1px solid var(--border)}.brand{display:flex;align-items:center;gap:12px;padding:0 8px 30px;font-weight:700;font-size:20px;letter-spacing:-.5px}.logo{background:var(--text);color:white;border-radius:10px;width:36px;height:36px;display:grid;place-items:center;font-size:26px}.sidebar>.primary{width:100%;margin-bottom:26px}.eyebrow{font-size:12px;letter-spacing:1.5px;color:var(--muted);font-weight:600}.task{display:block;width:100%;text-align:left;margin:8px 0;border:1px solid transparent;background:transparent;padding:12px}.task[aria-pressed=true]{background:white;border-color:var(--border)}.task span{display:block;font-size:12px;color:var(--muted);margin-top:4px}.side-note{margin-top:40px;padding:16px 10px;border-top:1px solid var(--border);font-size:13px;color:var(--muted)}main{min-width:0;display:flex;flex-direction:column}.topbar{min-height:88px;border-bottom:1px solid var(--border);padding:20px 32px;display:flex;align-items:center;justify-content:space-between;gap:16px;background:var(--surface)}h1{font-size:18px;margin:0 0 2px}h2{font-size:28px;line-height:1.35;letter-spacing:-.7px;margin:12px 0}h3{font-size:16px;margin:0 0 10px}.small{font-size:13px;color:var(--muted)}.pill{font-size:12px;border-radius:6px;padding:5px 9px;background:var(--soft);color:var(--primary);white-space:nowrap}.tabs{display:flex;gap:8px;padding:14px 32px;border-bottom:1px solid var(--border)}.tabs button{border-color:transparent;background:transparent}.tabs button[aria-pressed=true]{background:var(--surface);border-color:var(--border);font-weight:600}.content{width:100%;max-width:860px;margin:0 auto;padding:36px 32px;flex:1;min-height:400px}.intro{margin-bottom:28px}.intro p{color:var(--muted);max-width:540px}.message{padding:20px 24px;background:var(--surface);border:1px solid var(--border);border-radius:12px;margin:18px 0}.user{background:#eaf2ff;border:0}.message p{margin:8px 0}.label{font-size:12px;font-weight:700;color:var(--primary);letter-spacing:1px}.steps{padding:0;list-style:none}.steps li{padding:10px 0;border-bottom:1px solid var(--border);font-size:14px}.steps b{color:var(--primary);margin-right:12px}.composer-wrap{padding:12px 32px 24px;max-width:860px;width:100%;margin:0 auto}.composer{border:1px solid #b9c8cc;border-radius:12px;background:var(--surface);padding:16px}.composer label{font-size:13px;font-weight:600}textarea{display:block;width:100%;resize:vertical;min-height:90px;border:0;background:transparent;padding:10px 0;color:var(--text)}.compose-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}select{max-width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;min-height:44px;padding:6px;font-size:13px}.hint{font-size:12px;color:var(--muted);margin:10px 0 0}.inspector{border-left:1px solid var(--border);background:var(--surface);padding:26px 22px}.inspector h2{font-size:16px;margin:0}.artifact{border:1px solid var(--border);border-radius:10px;padding:16px;margin:20px 0}.file{display:flex;justify-content:space-between;font-size:13px;padding:12px 0;border-bottom:1px solid var(--border);gap:8px;overflow-wrap:anywhere}.plus{color:var(--primary)}.notice{font-size:13px;color:var(--attention);background:#fff6e8;padding:14px;border-radius:8px;margin-top:24px}pre{font-size:13px;background:var(--bg);padding:16px;border-radius:8px;overflow:auto;max-width:100%}.hidden{display:none!important}.statusline{font-size:13px;color:var(--muted);margin-top:16px}details{font-size:14px;margin:12px 0}summary{cursor:pointer;min-height:44px;display:flex;align-items:center}.mobile-nav{display:none}.inspector-mobile{display:none}.empty{padding:24px 0;color:var(--muted)}@media(min-width:1600px){.app{grid-template-columns:260px minmax(0,1fr) 360px}}@media(max-width:1100px){.app{grid-template-columns:220px minmax(0,1fr)}.inspector{display:none}.inspector-mobile{display:inline-block}}@media(max-width:767px){.app{display:block}.sidebar{display:none}.sidebar.open{display:block}.mobile-nav{display:inline-block}.topbar{padding:16px;flex-wrap:wrap}.tabs{padding:12px 16px}.content{padding:24px 16px}.composer-wrap{padding:12px 16px 24px}.message{padding:16px}h2{font-size:24px}.pill{white-space:normal}.compose-actions{align-items:stretch}.compose-actions select{width:100%}}@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+/* v2: compact controls, quieter chrome, blue focus. */
+button{min-height:36px;padding:6px 10px;font-size:14px;border-radius:8px}
+.mobile-nav{display:none}.icon-button{width:36px;height:36px;padding:8px;display:inline-grid;place-items:center;flex-shrink:0}
+.mobile-nav.icon-button{display:none}.icon{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle}
+.brand{padding-bottom:24px;font-size:18px}.logo{background:var(--primary);width:32px;height:32px;font-size:24px}
+.sidebar{display:flex;flex-direction:column;min-height:100vh;padding:24px 16px}.sidebar-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.sidebar-head .eyebrow{letter-spacing:0;font-size:13px}
+.task{padding:10px 12px;font-size:14px}.task[aria-pressed=true]{background:var(--soft);border-color:transparent;color:var(--primary)}.task span{font-size:12px}
+.side-note{margin-top:auto;padding:16px 0 0}.topbar{min-height:76px;padding:16px 28px}h1{font-size:16px}
+.tabs{padding:8px 28px;gap:4px}.tabs button{display:flex;align-items:center;gap:7px;color:var(--muted);border:0}.tabs button[aria-pressed=true]{background:var(--soft);color:var(--primary)}
+.content{padding:24px 32px;min-height:340px}.message{border:0;padding:18px 20px;margin:12px 0}.message.user{margin-left:12%}.message p{margin:6px 0}.label{letter-spacing:0;color:var(--muted);font-weight:400}.steps li:last-child{border-bottom:0}
+.composer-wrap{padding-bottom:24px}.composer{padding:12px 16px;border-color:var(--border);border-radius:16px}textarea{min-height:72px;padding:8px 0;resize:vertical}.compose-actions{justify-content:flex-end}.hint{text-align:center;color:var(--muted);font-size:11px}.statusline:empty{display:none}
+.inspector{padding:26px 22px;background:var(--bg)}.inspector h2{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14px;font-weight:400}.artifact{background:white;border:0;margin:16px 0;padding:18px}.artifact h3{font-size:15px}.file{font-size:13px}.empty{font-size:14px}.intro{padding:60px 0;text-align:center}.intro h2{font-size:26px;font-weight:500}.intro .icon{width:36px;height:36px;color:var(--primary);margin-bottom:12px}.pill{border-radius:20px}
+@media(max-width:767px){.mobile-nav.icon-button{display:inline-grid}.sidebar{display:none;min-height:auto}.sidebar.open{display:flex}.side-note{margin-top:20px}.topbar{padding:12px 16px}.tabs{padding:8px 16px}.content{padding:20px 16px}.message{padding:16px}.intro{padding:36px 0}.icon-button{width:44px;height:44px}.tabs button{min-height:44px}}
+
+/* Review fixes: wrapping, state cues, and adaptive hit areas. */
+.message,.topbar h1,.task{min-width:0;overflow-wrap:anywhere}
+.pill{display:inline-flex;align-items:center;gap:5px}.pill[data-status="failed"]{color:var(--danger);background:#fef0ed}.pill[data-status="waiting"]{color:var(--attention);background:#fff5e6}
+.hint{font-size:12px}.retry-button{width:auto;display:inline-flex;gap:6px}
+.composer:focus-within{border-color:var(--primary)}
+.app.results-view{grid-template-columns:240px minmax(0,1fr)}.results-view .inspector{display:none}
+@media(min-width:1600px){.app.results-view{grid-template-columns:260px minmax(0,1fr)}}
+@media(min-width:768px) and (max-width:1100px){.app.results-view{grid-template-columns:220px minmax(0,1fr)}}
+@media(pointer:coarse){button{min-height:44px}.icon-button{width:44px;height:44px}.retry-button{width:auto}}
+/* One shared composer surface: text above, actions aligned inside its lower edge. */
+.composer{display:flex;flex-direction:column;gap:12px;padding:18px 20px 14px;border:1px solid var(--border);border-radius:26px;background:var(--surface)}
+.composer:focus-within{border-color:var(--primary);box-shadow:0 0 0 2px var(--soft)}
+.composer textarea{display:block;min-height:64px;max-height:240px;width:100%;margin:0;padding:0;border:0;border-radius:0;background:transparent;resize:none;line-height:1.6;outline:none;box-shadow:none}
+.composer textarea:focus-visible{outline:none;box-shadow:none}
+.composer .compose-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:nowrap;gap:8px;min-height:36px;margin:0;padding:0;border:0;background:transparent}
+.composer #send{border-radius:50%;margin:0}
+.composer #send.retry-button{border-radius:20px;padding-inline:12px}
+@media(max-width:767px){.composer{padding:16px 16px 12px;border-radius:24px}.composer textarea{min-height:64px}.composer .compose-actions{min-height:44px}}
+
+.account-row{display:flex;align-items:center;gap:10px}.account-button{display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;text-align:left;padding:8px}.identity{display:flex;align-items:center;gap:10px;flex:1;min-width:0}.identity strong{display:block;font-size:14px;font-weight:500}.identity small{display:block;font-size:12px;color:var(--muted)}.avatar{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--soft);color:var(--primary)}
+.app.guest{grid-template-columns:240px minmax(0,1fr)}.guest .inspector,.guest .tabs,.guest .composer-wrap,.guest #badge,.guest #new{display:none}.guest .content{display:grid;place-items:center}.guest .intro{padding:40px 0}
+.auth-dialog{width:min(400px,calc(100% - 32px));padding:28px;border:1px solid var(--border);border-radius:20px;color:var(--text);background:var(--surface);font:inherit}.auth-dialog::backdrop{background:rgb(28 43 51 / 30%)}.auth-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}.auth-heading h2{font-size:20px;margin:0}.auth-dialog label{display:block;font-size:14px;margin:14px 0 6px}.auth-dialog input{width:100%;min-height:44px;padding:10px 12px;border:1px solid #8799ac;border-radius:8px;color:var(--text);background:var(--surface);font:inherit}.auth-dialog input[readonly]{background:var(--bg)}.auth-dialog input:focus-visible{outline:2px solid var(--primary);outline-offset:2px}.auth-dialog .primary{width:100%;margin-top:18px;min-height:40px}.auth-note{font-size:12px;color:var(--muted);margin:12px 0 0}.auth-error{font-size:13px;color:var(--danger);margin:10px 0 0}.auth-error:empty{display:none}
+@media(min-width:1600px){.app.guest{grid-template-columns:260px minmax(0,1fr)}}
+@media(min-width:768px) and (max-width:1100px){.app.guest{grid-template-columns:220px minmax(0,1fr)}}
+@media(pointer:coarse){.auth-dialog .primary{min-height:44px}}
+</style></head>
+<body><div class="app">
+<nav class="sidebar" id="sidebar" aria-label="任務"><div class="brand"><span class="logo" aria-hidden="true">π</span>Pi Workspace</div><div class="sidebar-head"><span class="eyebrow">任務</span><button class="icon-button" id="new" title="新增任務" aria-label="新增任務" data-icon="plus"></button></div><div id="task-list"></div><div class="side-note"><button id="login-open" class="account-button"><span class="avatar" data-icon="lock"></span><span>管理員登入</span></button><div id="identity-row" class="account-row hidden"><div class="identity"><span class="avatar" data-icon="user"></span><div><strong>admin</strong><small>管理員</small></div></div><button id="logout" class="icon-button" aria-label="登出" title="登出" data-icon="logout"></button></div></div></nav>
+<main><header class="topbar"><button class="mobile-nav icon-button" id="menu" aria-label="任務列表" title="任務列表" aria-expanded="false" aria-controls="sidebar" data-icon="menu"></button><h1 id="title" tabindex="-1">理解專案架構</h1><span class="pill" id="badge" role="status">已完成</span></header><div class="tabs" role="group" aria-label="內容"><button data-view="conversation" aria-pressed="true"><span data-icon="chat"></span>對話</button><button data-view="activity" aria-pressed="false"><span data-icon="activity"></span>活動</button><button data-view="results" aria-pressed="false"><span data-icon="file"></span>成果</button></div><section class="content" id="content" aria-label="任務內容"></section><div class="composer-wrap"><div class="composer"><label class="sr-only" for="prompt">輸入需求</label><textarea id="prompt" placeholder="想完成什麼？"></textarea><div class="compose-actions"><button class="primary icon-button" id="send" aria-label="送出" title="送出" data-icon="send"></button></div></div><p class="hint">互動預覽</p><div class="statusline" id="feedback" aria-live="polite"></div></div></main>
+<aside class="inspector" aria-label="成果摘要"><h2><span data-icon="file"></span>成果</h2><div id="aside-result"></div></aside></div>
+<dialog id="login-dialog" class="auth-dialog" aria-labelledby="login-title" aria-describedby="login-note"><div class="auth-heading"><h2 id="login-title">管理員登入</h2><button type="button" id="login-close" class="icon-button" aria-label="關閉登入" title="關閉" data-icon="close"></button></div><form id="login-form"><label for="username">帳號</label><input id="username" name="username" value="admin" readonly autocomplete="username"><label for="password">密碼</label><input id="password" type="password" required autocomplete="off" aria-describedby="login-note login-error"><p id="login-error" class="auth-error" role="alert"></p><button class="primary" type="submit">登入</button><p id="login-note" class="auth-note">介面預覽 · 密碼：pi-demo<br>請勿輸入真實密碼。</p></form></dialog>
+<script>
+const $=s=>document.querySelector(s);
+const paths={lock:'M6 10h12v11H6zM8 10V7a4 4 0 0 1 8 0v3',user:'M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM4 21v-2a8 8 0 0 1 16 0v2',logout:'M9 4H4v16h5M10 12h11m-4-4 4 4-4 4',close:'m6 6 12 12M6 18 18 6',plus:'M12 5v14M5 12h14',menu:'M4 6h16M4 12h16M4 18h16',chat:'M21 11.5a8.5 8.5 0 0 1-8.5 8.5H4l-1 1v-9.5A8.5 8.5 0 0 1 11.5 3h1a8.5 8.5 0 0 1 8.5 8.5Z',activity:'M3 12h4l3-8 4 16 3-8h4',file:'M14 2H5v20h14V7l-5-5ZM14 2v6h5M8 12h8M8 16h6',send:'M12 19V5M5 12l7-7 7 7',stop:'M6 6h12v12H6z',spark:'m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5Z',check:'m5 12 4 4L19 6',retry:'M3 10a9 9 0 1 1 2 8M3 4v6h6'};
+function icon(name){return '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="'+paths[name]+'"/></svg>';}
+function icons(){document.querySelectorAll('[data-icon]').forEach(e=>e.innerHTML=icon(e.dataset.icon));}
+const statuses={done:'已完成',waiting:'待回答',failed:'失敗',fresh:'準備就緒',running:'進行中',stopped:'已停止'};
+const stateIcons={done:'check',waiting:'chat',failed:'retry',fresh:'spark',running:'activity',stopped:'stop'};
+// UI demonstration only. This in-memory identity is NOT server authentication.
+let previewIdentity=null;
+const tasks=new Map();let activeTaskId='architecture',nextTaskId=1;
+function makeTask(id,title,status,messages=[]){return {id,title,status,messages,draft:'',view:'conversation',timer:null,activity:status==='fresh'?[]:['接收需求',statuses[status]],result:status==='done'?'architecture':null};}
+function seedDemoTasks(){
+tasks.set('architecture',makeTask('architecture','理解專案架構','done',[
+{role:'user',text:'幫我了解這個專案，先不要修改程式。'},
+{role:'assistant',text:'專案分成三個部分：\n1. 操作入口：接收需求與設定\n2. 任務執行：管理進度與對話\n3. 工具：讀寫檔案與執行命令\n\n未修改檔案。'}]));
+tasks.set('invitation',makeTask('invitation','技術分享邀請信','waiting',[{role:'assistant',text:'要邀請誰？請補充主題、時間與地點。'}]));
+tasks.set('tests',makeTask('tests','執行專案測試','failed',[{role:'user',text:'執行專案測試。'},{role:'assistant',text:'連線失敗。請確認模型服務已啟動，再重試。需求已保留。'}]));
+}
+seedDemoTasks();
+function current(){return tasks.get(activeTaskId);}
+function escapeText(t){return t.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function results(task){return task.result==='architecture'?'<div class="artifact"><span class="plus">'+icon('file')+'</span><h3>專案架構摘要</h3><div class="file">操作入口</div><div class="file">任務執行</div><div class="file">檔案與工具</div><p class="small">未變更檔案</p></div>':task.result==='preview'?'<div class="artifact"><h3>預覽完成</h3><p class="small">此預覽未執行實際任務。</p></div>':'<p class="empty">尚無成果</p>';}
+function renderTasks(){
+if(!isPreviewAdmin()){$('#task-list').innerHTML='';return;}
+const list=$('#task-list');const focusedId=list.contains(document.activeElement)?document.activeElement.dataset.task:null;list.innerHTML=Array.from(tasks.values()).map(t=>'<button class="task" data-task="'+t.id+'" aria-pressed="'+(t.id===activeTaskId)+'">'+escapeText(t.title)+'<span>'+statuses[t.status]+'</span></button>').join('');
+list.querySelectorAll('[data-task]').forEach(b=>{b.onclick=()=>selectTask(b.dataset.task);if(b.dataset.task===focusedId)b.focus();});
+}
+function render(){
+const authenticated=isPreviewAdmin();$('.app').classList.toggle('guest',!authenticated);$('#login-open').classList.toggle('hidden',authenticated);$('#identity-row').classList.toggle('hidden',!authenticated);$('#new').disabled=!authenticated;
+if(!authenticated){$('.app').classList.remove('results-view');$('#title').textContent='Pi Workspace';$('#badge').textContent='';$('#prompt').value='';$('#prompt').disabled=true;$('#send').disabled=true;$('#aside-result').innerHTML='';$('#task-list').innerHTML='';$('#content').innerHTML='<div class="intro">'+icon('lock')+'<h2>登入以開始工作</h2></div>';return;}
+$('#send').disabled=false;
+const t=current();$('#title').textContent=t.title;$('#badge').innerHTML=icon(stateIcons[t.status])+' '+statuses[t.status];$('#badge').dataset.status=t.status;
+$('.app').classList.toggle('results-view',t.view==='results');
+const action=t.status==='running'?'停止':t.status==='waiting'?'回答並繼續':t.status==='failed'?'重試':'送出';
+$('#send').innerHTML=icon(t.status==='running'?'stop':t.status==='failed'?'retry':'send')+(t.status==='failed'?'<span>重試</span>':'');$('#send').classList.toggle('retry-button',t.status==='failed');$('#send').setAttribute('aria-label',action);$('#send').title=action;
+$('#prompt').disabled=t.status==='running';$('#prompt').placeholder=t.status==='waiting'?'補充對象、主題與時間…':'想完成什麼？';$('#prompt').value=t.draft;$('#aside-result').innerHTML=results(t);
+renderTasks();document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===t.view)));
+let html='';if(t.view==='results')html=results(t);else if(t.view==='activity')html=t.activity.length?'<ol class="steps">'+t.activity.map((a,i)=>'<li><b>'+String(i+1).padStart(2,'0')+'</b>'+escapeText(a)+'</li>').join('')+'</ol>':'<p class="empty">尚無活動</p>';else{
+if(!t.messages.length)html='<div class="intro">'+icon('spark')+'<h2>今天想完成什麼？</h2></div>';
+html+=t.messages.map(m=>'<article class="message '+(m.role==='user'?'user':'')+'" aria-label="'+(m.role==='user'?'你的訊息':'Pi 的訊息')+'">'+(m.role==='assistant'?'<div class="label">Pi</div>':'')+'<p style="white-space:pre-wrap">'+escapeText(m.text)+'</p></article>').join('');
+if(t.status==='running')html+='<div class="small">'+icon('activity')+' 處理中…</div>';
+}$('#content').innerHTML=html;
+}
+function closeMenu(){if($('#sidebar').classList.contains('open')){$('#sidebar').classList.remove('open');$('#menu').setAttribute('aria-expanded','false');}}
+function selectTask(id){if(!isPreviewAdmin())return;current().draft=$('#prompt').value;activeTaskId=id;$('#feedback').textContent='';closeMenu();render();$('#title').focus();}
+function announce(message){$('#feedback').textContent=message;}
+function finishTask(id){if(!isPreviewAdmin())return;const t=tasks.get(id);t.timer=null;t.status='done';t.result='preview';t.messages.push({role:'assistant',text:'預覽完成。此預覽未執行實際任務。'});t.activity.push('預覽完成');const restore=activeTaskId===id&&document.activeElement===$('#send');if(activeTaskId===id){render();if(restore)$('#prompt').focus();}else renderTasks();announce(t.title+'：已完成');}
+$('#prompt').oninput=()=>{if(!isPreviewAdmin())return;current().draft=$('#prompt').value;};
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{if(!isPreviewAdmin())return;current().view=b.dataset.view;render();});
+$('#new').onclick=()=>{if(!isPreviewAdmin())return;current().draft=$('#prompt').value;const id='task-'+nextTaskId++;tasks.set(id,makeTask(id,'新任務','fresh'));activeTaskId=id;closeMenu();render();announce('已建立新任務');$('#prompt').focus();};
+$('#send').onclick=()=>{
+if(!isPreviewAdmin())return;
+const t=current();if(t.status==='running'){clearTimeout(t.timer);t.timer=null;t.status='stopped';t.messages.push({role:'assistant',text:'已停止。'});t.activity.push('已停止');render();announce('已停止');$('#prompt').focus();return;}
+const text=$('#prompt').value.trim()||(t.status==='failed'?'重試專案測試':'');if(!text){announce('請輸入需求。');$('#prompt').focus();return;}
+if(t.status==='fresh')t.title=text.length>22?text.slice(0,22)+'…':text;
+t.messages.push({role:'user',text});t.draft='';t.status='running';t.view='conversation';t.activity.push('處理需求');render();announce('進行中');$('#send').focus();t.timer=setTimeout(()=>finishTask(t.id),4000);
+};
+$('#prompt').onkeydown=e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();$('#send').click();}};
+$('#menu').onclick=()=>{const open=$('#sidebar').classList.toggle('open');$('#menu').setAttribute('aria-expanded',String(open));if(open){const target=isPreviewAdmin()?$('#task-list').querySelector('[aria-pressed="true"]'):$('#login-open');target.focus();}};
+$('#sidebar').onkeydown=e=>{if(e.key==='Escape'&&$('#sidebar').classList.contains('open')){closeMenu();$('#menu').focus();}};
+function isPreviewAdmin(){return previewIdentity?.role==='admin';}
+let loginReturnFocus=null;
+$('#login-open').onclick=()=>{loginReturnFocus=document.activeElement;$('#password').value='';$('#password').removeAttribute('aria-invalid');$('#login-error').textContent='';$('#login-dialog').showModal();$('#password').focus();};
+$('#login-close').onclick=()=>$('#login-dialog').close();
+$('#login-dialog').onclose=()=>{ $('#password').value='';if(!isPreviewAdmin())loginReturnFocus?.focus();};
+$('#login-form').onsubmit=e=>{e.preventDefault();if($('#username').value!=='admin'||$('#password').value!=='pi-demo'){$('#login-error').textContent='帳號或密碼不正確。';$('#password').setAttribute('aria-invalid','true');$('#password').focus();return;}
+previewIdentity={name:'admin',role:'admin'};$('#password').value='';$('#login-dialog').close();closeMenu();render();$('#title').focus();announce('admin 已登入（預覽）');};
+$('#logout').onclick=()=>{for(const t of tasks.values())clearTimeout(t.timer);tasks.clear();activeTaskId='architecture';nextTaskId=1;seedDemoTasks();previewIdentity=null;$('#feedback').textContent='';render();if($('#menu').getBoundingClientRect().width>0){closeMenu();$('#menu').focus();}else $('#login-open').focus();};
+icons();render();
+</script></body></html>

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from pathlib import Path
+import os
 from tempfile import TemporaryDirectory
 from unittest import TestCase
 from unittest.mock import patch
 
+import deepagents
 from langchain_core.language_models.fake_chat_models import FakeMessagesListChatModel
 from langchain_core.messages import AIMessage
 
@@ -18,6 +20,41 @@ class ToolCapableFakeChatModel(FakeMessagesListChatModel):
 
 
 class AgentFactoryTests(TestCase):
+    def test_loopback_openai_endpoint_uses_chat_completions(self) -> None:
+        for endpoint_key in ("OPENAI_BASE_URL", "OPENAI_API_BASE"):
+            for endpoint in ("http://127.0.0.1:8080/v1", "http://localhost:8080/v1", "http://[::1]:8080/v1"):
+                with self.subTest(key=endpoint_key, endpoint=endpoint), TemporaryDirectory() as root:
+                    configured = ToolCapableFakeChatModel(responses=[AIMessage(content='ok')], profile={'max_input_tokens':13312})
+                    with patch.dict(os.environ, {endpoint_key: endpoint}, clear=True), \
+                         patch("pi_deepagent.local_model.make_local_model", autospec=True, return_value=configured) as initialize, \
+                         patch.object(deepagents, "create_deep_agent", autospec=True) as create:
+                        create_pi_deepagent(root, model="openai:qwen3.8-27b")
+                    initialize.assert_called_once_with("qwen3.8-27b", endpoint)
+                    self.assertIs(create.call_args.kwargs["model"], configured)
+                    from deepagents.middleware.summarization import SummarizationMiddleware
+                    self.assertTrue(any(isinstance(m, SummarizationMiddleware) for m in create.call_args.kwargs['middleware']))
+
+    def test_cloud_and_preconfigured_models_keep_their_api_configuration(self) -> None:
+        configured = ToolCapableFakeChatModel(responses=[AIMessage(content="ok")])
+        cases = [
+            ({}, "openai:gpt-5.5"),
+            ({"OPENAI_BASE_URL": "https://api.openai.com/v1"}, "openai:gpt-5.5"),
+            ({"OPENAI_BASE_URL": "http://localhost.example/v1"}, "openai:custom"),
+            ({"OPENAI_BASE_URL": "http://192.0.2.1/v1"}, "openai:custom"),
+            ({"OPENAI_BASE_URL": "http://[invalid/v1"}, "openai:custom"),
+            ({"OPENAI_BASE_URL": "http://127.0.0.1:8080/v1", "OPENAI_API_BASE": "https://api.openai.com/v1"}, "openai:gpt-5.5"),
+            ({"OPENAI_BASE_URL": "http://127.0.0.1:8080/v1"}, "google_genai:gemini-3.6-flash"),
+            ({"OPENAI_BASE_URL": "http://127.0.0.1:8080/v1"}, configured),
+        ]
+        for environment, model in cases:
+            with self.subTest(environment=environment, model=type(model).__name__), TemporaryDirectory() as root:
+                with patch.dict(os.environ, environment, clear=True), \
+                     patch("pi_deepagent.local_model.make_local_model", autospec=True) as initialize, \
+                     patch.object(deepagents, "create_deep_agent", autospec=True) as create:
+                    create_pi_deepagent(root, model=model)
+                initialize.assert_not_called()
+                self.assertIs(create.call_args.kwargs["model"], model)
+
     def test_core_contracts_are_available_from_package_root(self) -> None:
         self.assertEqual(ModelRef("fake", "small").qualified_name, "fake/small")
         self.assertEqual(AgentEvent("event-1", "run-1", "run_start").kind, "run_start")
@@ -66,7 +103,7 @@ class AgentFactoryTests(TestCase):
     def test_factory_passes_workspace_bound_tools_to_deepagents(self) -> None:
         with TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)
-            with patch("deepagents.create_deep_agent", return_value="agent") as create_agent:
+            with patch("deepagents.create_deep_agent", autospec=True, return_value="agent") as create_agent:
                 result = create_pi_deepagent(root, model="test:model")
 
             self.assertEqual(result, "agent")
@@ -84,7 +121,7 @@ class AgentFactoryTests(TestCase):
         extra_tool = object()
         subagents = [{"name": "reviewer", "description": "reviews", "system_prompt": "review"}]
         with TemporaryDirectory() as temporary_directory:
-            with patch("deepagents.create_deep_agent", return_value="agent") as create_agent:
+            with patch("deepagents.create_deep_agent", autospec=True, return_value="agent") as create_agent:
                 create_pi_deepagent(
                     temporary_directory,
                     model="test:model",
@@ -99,7 +136,7 @@ class AgentFactoryTests(TestCase):
 
     def test_shell_backend_has_a_working_environment_and_custom_timeout(self) -> None:
         with TemporaryDirectory() as temporary_directory:
-            with patch("deepagents.create_deep_agent", return_value="agent") as create_agent:
+            with patch("deepagents.create_deep_agent", autospec=True, return_value="agent") as create_agent:
                 create_pi_deepagent(
                     temporary_directory,
                     model="test:model",
@@ -111,7 +148,7 @@ class AgentFactoryTests(TestCase):
             self.assertIn("PATH", backend._env)
 
         with TemporaryDirectory() as temporary_directory:
-            with patch("deepagents.create_deep_agent", return_value="agent") as create_agent:
+            with patch("deepagents.create_deep_agent", autospec=True, return_value="agent") as create_agent:
                 create_pi_deepagent(
                     temporary_directory,
                     model="test:model",
