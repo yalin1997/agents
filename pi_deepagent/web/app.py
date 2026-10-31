@@ -42,7 +42,11 @@ def _object(pairs):
 
 
 class WebApp:
-    def __init__(self, data_dir, workspace, model, origin, runner_factory=None):
+    def __init__(self, data_dir, workspace, model, origin, runner_factory=None, *, collaboration_enabled=False):
+        if type(collaboration_enabled) is not bool:
+            raise ValueError('協作啟用設定必須為布林值。')
+        self.collaboration_enabled = collaboration_enabled
+        self.collaboration = None
         self.workspace = Path(workspace).resolve()
         self.data_dir = Path(data_dir).resolve()
         if not self.workspace.is_dir():
@@ -72,13 +76,24 @@ class WebApp:
         self.audit_handler = None
 
     async def startup(self):
-        await self.service.startup()
+        if self.ready:
+            return
+        legacy_started = False
         try:
+            if self.collaboration_enabled:
+                from ..collaboration.web_adapter import TeamHTTPAdapter
+                self.collaboration = TeamHTTPAdapter(self.data_dir / 'tasks.sqlite', self.auth, self.workspace)
+            await self.service.startup()
+            legacy_started = True
             self.audit_handler = logging.FileHandler(self.data_dir / 'audit.log', encoding='utf-8')
             self.audit_handler.setFormatter(logging.Formatter('%(asctime)s %(message)s'))
             self.audit.addHandler(self.audit_handler)
-        except Exception:
-            await self.service.shutdown()
+        except BaseException:
+            if self.collaboration is not None:
+                self.collaboration.close()
+                self.collaboration = None
+            if legacy_started:
+                await self.service.shutdown()
             raise
         self.auth.clear_sessions()
         self.ready = True
@@ -88,6 +103,9 @@ class WebApp:
         try:
             await self.service.shutdown()
         finally:
+            if self.collaboration is not None:
+                self.collaboration.close()
+                self.collaboration = None
             self.auth.clear_sessions()
             if self.audit_handler:
                 self.audit.removeHandler(self.audit_handler)
@@ -124,12 +142,15 @@ class WebApp:
             status, payload = error.status, {'error': error.message}
         except Exception as error:
             from .service import WebError
+            from ..collaboration.contracts import CollaborationError
             if isinstance(error, WebError):
                 status, payload = error.status, {'error': self.redactor.clean(str(getattr(error, 'message', error)))}
+            elif isinstance(error, CollaborationError):
+                status, payload = error.status, {'error': self.redactor.clean(error.message), 'code': error.code}
             # Unknown exceptions intentionally never reach browser or logs.
         path = scope.get('path', '')
         # Do not log attacker-controlled path or headers (may contain credentials).
-        route = path if path in ASSETS or path in ('/api/login', '/api/logout', '/api/session', '/api/tasks', '/api/tasks/purge') else '/api/resource'
+        route = path if path in ASSETS or path in ('/api/login', '/api/logout', '/api/session', '/api/tasks', '/api/tasks/purge', '/api/teams') else '/api/resource'
         match = re.fullmatch(r'/api/tasks/([0-9a-fA-F-]{36})(?:/(?:result|messages|stop|retry|archive|restore))?', path)
         if match:
             try:
@@ -140,6 +161,16 @@ class WebApp:
                 pass
         if scope.get('_audit_targets'):
             route += ' ids=' + scope['_audit_targets']
+        team_match = re.fullmatch(r'/api/teams/([0-9a-fA-F-]{36})', path)
+        if team_match:
+            try:
+                route = '/api/teams/' + str(UUID(team_match.group(1)))
+            except ValueError:
+                pass
+        if scope.get('_audit_created_team_id'):
+            route = '/api/teams/' + scope['_audit_created_team_id']
+        if scope.get('_audit_request_id'):
+            route += ' request_id=' + scope['_audit_request_id']
         self.audit.info('action=%s identity=%s target=%s outcome=%s', scope.get('method', '') if scope.get('method', '') in ('GET','POST','PUT','DELETE','PATCH','OPTIONS','HEAD') else 'OTHER', scope.get('_audit_identity', identity), route, 'allow' if status < 400 else 'deny')
         headers = [(b'cache-control', b'no-store'), (b'x-content-type-options', b'nosniff'), (b'content-type', content_type.encode()), (b'content-security-policy', b"default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")]+extra
         body = payload if isinstance(payload, bytes) else json.dumps(payload, ensure_ascii=False).encode('utf-8')
@@ -175,10 +206,11 @@ class WebApp:
             scope['_audit_identity'] = session.name if session.name == 'admin' else 'other'
             if session.role != 'admin' or session.name != 'admin':
                 raise HTTPError(403, '沒有操作權限。')
-        if method not in ('GET', 'POST'):
+        team_patch = method == 'PATCH' and path.startswith('/api/teams/')
+        if method not in ('GET', 'POST') and not team_patch:
             raise HTTPError(405, '不支援此操作。')
         data = None
-        if method == 'POST':
+        if method == 'POST' or team_patch:
             if headers.get('origin') != self.origin:
                 raise HTTPError(403, '來源不被允許。')
             if headers.get('content-type', '').split(';', 1)[0].strip().lower() != 'application/json':
@@ -220,6 +252,11 @@ class WebApp:
             token, csrf = self.auth.login(data['username'], data['password'], str(scope.get('client', ('local',))[0]))
             return 200, self.identity(csrf), 'application/json; charset=utf-8', [(b'set-cookie', f'pi_session={token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=28800'.encode())], 'admin'
         result, status = None, 200
+        if path == '/api/teams' or path.startswith('/api/teams/'):
+            if self.collaboration is None:
+                raise HTTPError(503, '協作尚未啟用；啟用前需明確準備資料庫。')
+            status, result = self.collaboration.dispatch(scope, token, data)
+            return status, result, 'application/json; charset=utf-8', [], identity
         if method == 'GET' and path == '/api/session':
             result = self.identity(session.csrf)
         elif method == 'POST' and path == '/api/logout':
@@ -277,5 +314,5 @@ class WebApp:
         return {'identity': {'name': 'admin', 'role': 'admin'}, 'csrf': csrf, 'workspace': self.workspace.name}
 
 
-def create_app(data_dir, workspace, model, origin, runner_factory=None):
-    return WebApp(data_dir, workspace, model, origin, runner_factory)
+def create_app(data_dir, workspace, model, origin, runner_factory=None, *, collaboration_enabled=False):
+    return WebApp(data_dir, workspace, model, origin, runner_factory, collaboration_enabled=collaboration_enabled)

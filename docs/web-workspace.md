@@ -84,6 +84,22 @@ node --test tests/ui-state.test.mjs tests/ui-app.test.mjs
 
 Windows 執行環境需允許 asyncio 的本機 socket；受限沙箱可能停在事件迴圈初始化，正常本機執行可驗證。
 
+## 開發中的團隊草稿 API（明確啟用）
+
+多 Agent v0.3 仍未完成整體驗收。目前可選擇啟用真正持久化的團隊草稿 HTTP API；沒有團隊 UI 或執行流程。預設既有啟動方式不變，也不建立／升級 collaboration schema。
+
+只有在管理員已明確審查、停服務、備份並套用目前 `pi_deepagent/collaboration/migrations/` 後，才使用：
+
+```powershell
+.venv/Scripts/python.exe -m pi_deepagent.web --workspace C:/path/to/project --data-dir C:/private/pi-workspace --collaboration --port 8765
+```
+
+`--collaboration` 只檢查及開啟相符 schema，**不套 migration**；缺少、舊版或 checksum 不符會拒絕啟用。正式 migration 在本次開發 session 尚未獲准執行；不要將測試 fixture 初始化指令用於既有 DB。
+
+目前四路由為 GET/POST `/api/teams`、GET/PATCH `/api/teams/{id}`。POST 提交完整 name／goal／criteria／members、optional policy 及 UUID request_id；PATCH 亦提交完整設定，另帶 expected_revision。列表使用 cursor／limit（預設 50、最多 200）。全部使用既有 admin cookie；變更需正確 Origin、JSON 及 CSRF；owner／workspace／role 不由請求決定。
+
+團隊執行、待答／核准 HTTP、候選與驗證尚未掛載，不能以建立草稿代替 run 或隔離驗收。回復原單 Agent 啟動時省略旗標並保留資料，不刪除團隊表。實作／測試、回復與證據見 [HTTP 批次審核](multi-agent-collaboration-m1-http-review.md)；完整工作要求與尚未完成項目見 [計畫](multi-agent-collaboration-plan.md) 及 [AC 矩陣](multi-agent-collaboration-acceptance.md)。
+
 規格、逐項審查處置與最終驗收證據見 [實作規格](ui-implementation-spec.md) 與 [審查紀錄](ui-implementation-review.md)。測試中的可控模型不使用付費 provider；沒有將通過的離線測試宣稱為真實 provider 連線驗證。
 
 

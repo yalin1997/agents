@@ -18,6 +18,7 @@ def main(argv=None):
     parser.add_argument('--workspace', type=Path, default=Path(os.environ.get('PI_DEEPAGENT_WORKSPACE', '.')))
     parser.add_argument('--model', default=os.environ.get('PI_DEEPAGENT_MODEL', 'google_genai:gemini-3.6-flash'))
     parser.add_argument('--port', type=int, default=8765)
+    parser.add_argument('--collaboration', action='store_true', help='啟用團隊草稿 API；須先明確完成 collaboration schema migration')
     args = parser.parse_args(argv)
     workspace = args.workspace.resolve()
     data_dir = args.data_dir.resolve()
@@ -42,8 +43,16 @@ def main(argv=None):
     except ImportError:
         parser.error('需要現有 a2a extra：uv sync --extra a2a')
     from .app import create_app
+    if args.collaboration:
+        from ..collaboration.contracts import CollaborationError
+        from ..collaboration.storage import CollaborationStore
+        try:
+            with CollaborationStore(data_dir / 'tasks.sqlite'):
+                pass
+        except CollaborationError:
+            parser.error('協作資料表尚未準備或版本不符；請先審查、備份並明確套用 migration。啟動器不自動升級。')
     try:
-        app = create_app(args.data_dir, args.workspace, args.model, f'http://127.0.0.1:{args.port}')
+        app = create_app(args.data_dir, args.workspace, args.model, f'http://127.0.0.1:{args.port}', collaboration_enabled=args.collaboration)
     except ValueError as error:
         parser.error(str(error))
     print('僅供本機管理員使用。停止不會復原檔案，亦不保證終止外部子程序。')
